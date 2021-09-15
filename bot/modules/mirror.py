@@ -75,10 +75,7 @@ class MirrorListener(listeners.MirrorListeners):
             try:
                 with download_dict_lock:
                     download_dict[self.uid] = TarStatus(name, m_path, size)
-                if self.isZip:
-                    path = fs_utils.zip(name, m_path)
-                else:
-                    path = fs_utils.tar(m_path)
+                path = fs_utils.zip(name, m_path) if self.isZip else fs_utils.tar(m_path)
             except FileNotFoundError:
                 LOGGER.info('File to archive not found!')
                 self.onUploadError('Internal error occurred!!')
@@ -132,7 +129,6 @@ class MirrorListener(listeners.MirrorListeners):
                 fs_utils.clean_download(download.path())
             except Exception as e:
                 LOGGER.error(str(e))
-                pass
             count = len(download_dict)
         if self.message.from_user.username:
             uname = f"@{self.message.from_user.username}"
@@ -153,19 +149,19 @@ class MirrorListener(listeners.MirrorListeners):
 
     def onUploadComplete(self, link: str, size, files, folders, typ):
         with download_dict_lock:
-            msg = f'<b>Filename: </b><code>{download_dict[self.uid].name()}</code>\n<b>Size: </b><code>{size}</code>'
+            msg = f'<b>𝐅𝐢𝐥𝐞 𝐍𝐚𝐦𝐞 ➤ </b><code>{download_dict[self.uid].name()}</code>\n<b>𝐒𝐢𝐳𝐞 ➤ </b><code>{size}</code>'
             if os.path.isdir(f'{DOWNLOAD_DIR}/{self.uid}/{download_dict[self.uid].name()}'):
-                msg += '\n<b>Type: </b><code>Folder</code>'
-                msg += f'\n<b>SubFolders: </b><code>{folders}</code>'
-                msg += f'\n<b>Files: </b><code>{files}</code>'
+                msg += '\n<b>𝐓𝐲𝐩𝐞 ➤ </b><code>Folder</code>'
+                msg += f'\n<b>𝐒𝐮𝐛 𝐅𝐨𝐥𝐝𝐞𝐫𝐬 ➤ </b><code>{folders}</code>'
+                msg += f'\n<b>𝐅𝐢𝐥𝐞𝐬 ➤ </b><code>{files}</code>'
             else:
-                msg += f'\n<b>Type: </b><code>{typ}</code>'
+                msg += f'\n<b>𝐓𝐲𝐩𝐞 ➤ </b><code>{typ}</code>'
             buttons = button_build.ButtonMaker()
             if SHORTENER is not None and SHORTENER_API is not None:
                 surl = short_url(link)
-                buttons.buildbutton("☁️ Drive Link", surl)
+                buttons.buildbutton("🌐 𝗚-𝗗𝗥𝗜𝗩𝗘 𝗟𝗜𝗡𝗞 🌐", surl)
             else:
-                buttons.buildbutton("☁️ Drive Link", link)
+                buttons.buildbutton("🌐 𝗚-𝗗𝗥𝗜𝗩𝗘 𝗟𝗜𝗡𝗞 🌐", link)
             LOGGER.info(f'Done Uploading {download_dict[self.uid].name()}')
             if INDEX_URL is not None:
                 url_path = requests.utils.quote(f'{download_dict[self.uid].name()}')
@@ -174,21 +170,21 @@ class MirrorListener(listeners.MirrorListeners):
                     share_url += '/'
                     if SHORTENER is not None and SHORTENER_API is not None:
                         siurl = short_url(share_url)
-                        buttons.buildbutton("⚡ Index Link", siurl)
+                        buttons.buildbutton("⚡ 𝗜𝗡𝗗𝗘𝗫 𝗟𝗜𝗡𝗞 ⚡", siurl)
                     else:
-                        buttons.buildbutton("⚡ Index Link", share_url)
+                        buttons.buildbutton("⚡ 𝗜𝗡𝗗𝗘𝗫 𝗟𝗜𝗡𝗞 ⚡", share_url)
                 else:
                     share_urls = f'{INDEX_URL}/{url_path}?a=view'
                     if SHORTENER is not None and SHORTENER_API is not None:
                         siurl = short_url(share_url)
-                        buttons.buildbutton("⚡ Index Link", siurl)
+                        buttons.buildbutton("⚡ 𝗜𝗡𝗗𝗘𝗫 𝗟𝗜𝗡𝗞 ⚡", siurl)
                         if VIEW_LINK:
                             siurls = short_url(share_urls)
-                            buttons.buildbutton("🌐 View Link", siurls)
+                            buttons.buildbutton("♻️ 𝗪𝗔𝗧𝗖𝗛 ♻️", siurls)
                     else:
-                        buttons.buildbutton("⚡ Index Link", share_url)
+                        buttons.buildbutton("⚡ Index Link ⚡", share_url)
                         if VIEW_LINK:
-                            buttons.buildbutton("🌐 View Link", share_urls)
+                            buttons.buildbutton("♻️ 𝗪𝗔𝗧𝗖𝗛 ♻️", share_urls)
             if BUTTON_FOUR_NAME is not None and BUTTON_FOUR_URL is not None:
                 buttons.buildbutton(f"{BUTTON_FOUR_NAME}", f"{BUTTON_FOUR_URL}")
             if BUTTON_FIVE_NAME is not None and BUTTON_FIVE_URL is not None:
@@ -200,7 +196,12 @@ class MirrorListener(listeners.MirrorListeners):
             else:
                 uname = f'<a href="tg://user?id={self.message.from_user.id}">{self.message.from_user.first_name}</a>'
             if uname is not None:
-                msg += f'\n\ncc: {uname}'
+                msg += f'\n\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬'
+                msg += f'\n\n<b>SUCCESSFULLY UPLOADED TO TEAM DRIVE 📩</b>'
+                msg += f'\n\n🗳 𝗣𝗢𝗪𝗘𝗥𝗘𝗗 𝗕𝗬 @MirrorToIndex'
+                msg += f'\n\n⚠️ 𝗗𝗢 𝗡𝗢𝗧 𝗦𝗛𝗔𝗥𝗘 𝗜𝗡𝗗𝗘𝗫 𝗟𝗜𝗡𝗞 𝗣𝗨𝗕𝗟𝗜𝗖𝗟𝗬 ⚠️'
+                msg += f'\n\n𝙍𝙚𝙦𝙪𝙚𝙨𝙩𝙚𝙙 𝘽𝙮 𝙩𝙝𝙚 𝙐𝙨𝙚𝙧 ▶️: {uname}'
+                msg += f'\n\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬'
             try:
                 fs_utils.clean_download(download_dict[self.uid].path())
             except FileNotFoundError:
@@ -241,7 +242,7 @@ def _mirror(bot, update, isTar=False, extract=False, isZip=False, isQbit=False):
     qbitsel = False
     try:
         link = message_args[1]
-        if link == "qb" or link == "qbs":
+        if link in ["qb", "qbs"]:
             isQbit = True
             if link == "qbs":
                 qbitsel = True
@@ -292,20 +293,23 @@ def _mirror(bot, update, isTar=False, extract=False, isZip=False, isQbit=False):
                 file = i
                 break
 
-        if not bot_utils.is_url(link) and not bot_utils.is_magnet(link) or len(link) == 0:
-            if file is not None:
-                if isQbit:
-                    file_name = str(time.time()).replace(".", "") + ".torrent"
-                    file.get_file().download(custom_path=f"{file_name}")
-                    link = f"{file_name}"
-                elif file.mime_type != "application/x-bittorrent":
-                    listener = MirrorListener(bot, update, pswd, isTar, extract, isZip)
-                    tg_downloader = TelegramDownloadHelper(listener)
-                    ms = update.message
-                    tg_downloader.add_download(ms, f'{DOWNLOAD_DIR}{listener.uid}/', name)
-                    return
-                else:
-                    link = file.get_file().file_path
+        if (
+            not bot_utils.is_url(link)
+            and not bot_utils.is_magnet(link)
+            or len(link) == 0
+        ) and file is not None:
+            if isQbit:
+                file_name = str(time.time()).replace(".", "") + ".torrent"
+                file.get_file().download(custom_path=f"{file_name}")
+                link = f"{file_name}"
+            elif file.mime_type != "application/x-bittorrent":
+                listener = MirrorListener(bot, update, pswd, isTar, extract, isZip)
+                tg_downloader = TelegramDownloadHelper(listener)
+                ms = update.message
+                tg_downloader.add_download(ms, f'{DOWNLOAD_DIR}{listener.uid}/', name)
+                return
+            else:
+                link = file.get_file().file_path
 
     if not bot_utils.is_url(link) and not bot_utils.is_magnet(link):
         sendMessage('No download source provided', bot, update)
