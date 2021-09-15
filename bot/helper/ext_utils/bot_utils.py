@@ -72,9 +72,15 @@ def getDownloadByGid(gid):
     with download_dict_lock:
         for dl in download_dict.values():
             status = dl.status()
-            if status != MirrorStatus.STATUS_ARCHIVING and status != MirrorStatus.STATUS_EXTRACTING:
-                if dl.gid() == gid:
-                    return dl
+            if (
+                status
+                not in [
+                    MirrorStatus.STATUS_ARCHIVING,
+                    MirrorStatus.STATUS_EXTRACTING,
+                ]
+                and dl.gid() == gid
+            ):
+                return dl
     return None
 
 
@@ -82,22 +88,24 @@ def getAllDownload():
     with download_dict_lock:
         for dlDetails in download_dict.values():
             status = dlDetails.status()
-            if status != MirrorStatus.STATUS_ARCHIVING and \
-               status != MirrorStatus.STATUS_EXTRACTING and \
-               status != MirrorStatus.STATUS_CLONING and \
-               status != MirrorStatus.STATUS_UPLOADING:
-                if dlDetails:
-                    return dlDetails
+            if (
+                status
+                not in [
+                    MirrorStatus.STATUS_ARCHIVING,
+                    MirrorStatus.STATUS_EXTRACTING,
+                    MirrorStatus.STATUS_CLONING,
+                    MirrorStatus.STATUS_UPLOADING,
+                ]
+                and dlDetails
+            ):
+                return dlDetails
     return None
 
 
 def get_progress_bar_string(status):
     completed = status.processed_bytes() / 8
     total = status.size_raw() / 8
-    if total == 0:
-        p = 0
-    else:
-        p = round(completed * 100 / total)
+    p = 0 if total == 0 else round(completed * 100 / total)
     p = min(max(p, 0), 100)
     cFull = p // 8
     cPart = p % 8 - 1
@@ -123,42 +131,44 @@ def get_readable_message():
         for download in list(download_dict.values()):
             INDEX += 1
             if INDEX > COUNT:
-                msg += f"<b>Filename:</b> <code>{download.name()}</code>"
-                msg += f"\n<b>Status:</b> <i>{download.status()}</i>"
-                if download.status() != MirrorStatus.STATUS_ARCHIVING and download.status() != MirrorStatus.STATUS_EXTRACTING:
+                msg += f"<b>𝐅𝐢𝐥𝐞 𝐍𝐚𝐦𝐞 ➤</b> <code>{download.name()}</code>"
+                msg += f"\n<b>𝐒𝐭𝐚𝐭𝐮𝐬 ➤</b> <i>{download.status()}</i>"
+                if download.status() not in [
+                    MirrorStatus.STATUS_ARCHIVING,
+                    MirrorStatus.STATUS_EXTRACTING,
+                ]:
                     msg += f"\n<code>{get_progress_bar_string(download)} {download.progress()}</code>"
                     if download.status() == MirrorStatus.STATUS_CLONING:
-                        msg += f"\n<b>Cloned:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
+                        msg += f"\n<b>𝐂𝐥𝐨𝐧𝐞𝐝 ➤</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
                     elif download.status() == MirrorStatus.STATUS_UPLOADING:
-                        msg += f"\n<b>Uploaded:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
+                        msg += f"\n<b>𝐔𝐩𝐥𝐨𝐚𝐝𝐞𝐝 ➤</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
                     else:
-                        msg += f"\n<b>Downloaded:</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
-                    msg += f"\n<b>Speed:</b> <code>{download.speed()}</code>" \
-                            f", <b>ETA:</b> <code>{download.eta()}</code> "
+                        msg += f"\n<b>𝐃𝐨𝐰𝐧𝐥𝐨𝐚𝐝𝐞𝐝 ➤</b> <code>{get_readable_file_size(download.processed_bytes())}</code> of <code>{download.size()}</code>"
+                    msg += f"\n<b>𝐒𝐩𝐞𝐞𝐝 ➤</b> <code>{download.speed()}</code>" \
+                            f", <b>𝐄𝐓𝐀 ➤</b> <code>{download.eta()}</code> "
                     # if hasattr(download, 'is_torrent'):
                     try:
-                        msg += f"\n<b>Seeders:</b> <code>{download.aria_download().num_seeders}</code>" \
-                            f" | <b>Peers:</b> <code>{download.aria_download().connections}</code>"
+                        msg += f"\n<b>𝐒𝐞𝐞𝐝𝐞𝐫𝐬 ➤</b> <code>{download.aria_download().num_seeders}</code>" \
+                            f" | <b>𝐏𝐞𝐞𝐫𝐬 ➤</b> <code>{download.aria_download().connections}</code>"
                     except:
                         pass
                     try:
-                        msg += f"\n<b>Seeders:</b> <code>{download.torrent_info().num_seeds}</code>" \
-                            f" | <b>Leechers:</b> <code>{download.torrent_info().num_leechs}</code>"
+                        msg += f"\n<b>𝐒𝐞𝐞𝐝𝐞𝐫𝐬 ➤</b> <code>{download.torrent_info().num_seeds}</code>" \
+                            f" | <b>𝐋𝐞𝐞𝐜𝐡𝐞𝐫𝐬 ➤</b> <code>{download.torrent_info().num_leechs}</code>"
                     except:
                         pass
-                    msg += f"\n<b>To Stop:</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
+                    msg += f"\n<b>𝐓𝐨 𝐒𝐭𝐨𝐩 ➤</b> <code>/{BotCommands.CancelMirror} {download.gid()}</code>"
                 msg += "\n\n"
-                if STATUS_LIMIT is not None:
-                    if INDEX >= COUNT + STATUS_LIMIT:
-                        break
+                if STATUS_LIMIT is not None and INDEX >= COUNT + STATUS_LIMIT:
+                    break
         if STATUS_LIMIT is not None:
             if INDEX > COUNT + STATUS_LIMIT:
                 return None, None
             if dick_no > STATUS_LIMIT:
-                msg += f"Page: <code>{PAGE_NO}/{pages}</code> | <code>Tasks: {dick_no}</code>\n"
+                msg += f"𝐏𝐚𝐠𝐞 ➤ <code>{PAGE_NO}/{pages}</code> | <code>𝐓𝐚𝐬𝐤𝐬 ➤ {dick_no}</code>\n"
                 buttons = button_build.ButtonMaker()
-                buttons.sbutton("Previous", "pre")
-                buttons.sbutton("Next", "nex")
+                buttons.sbutton("𝐏𝐫𝐞𝐯𝐢𝐨𝐮𝐬", "pre")
+                buttons.sbutton("𝐍𝐞𝐱𝐭", "nex")
                 button = InlineKeyboardMarkup(buttons.build_menu(2))
                 return msg, button
         return msg, ""
@@ -186,7 +196,7 @@ def flip(update, context):
 
 
 def check_limit(size, limit, tar_unzip_limit=None, is_tar_ext=False):
-    LOGGER.info(f"Checking File/Folder Size...")
+    LOGGER.info('Checking File/Folder Size...')
     if is_tar_ext and tar_unzip_limit is not None:
         limit = tar_unzip_limit
     if limit is not None:
@@ -220,9 +230,7 @@ def get_readable_time(seconds: int) -> str:
 
 def is_url(url: str):
     url = re.findall(URL_REGEX, url)
-    if url:
-        return True
-    return False
+    return bool(url)
 
 
 def is_gdrive_link(url: str):
@@ -245,9 +253,7 @@ def get_mega_link_type(url: str):
 
 def is_magnet(url: str):
     magnet = re.findall(MAGNET_REGEX, url)
-    if magnet:
-        return True
-    return False
+    return bool(magnet)
 
 
 def new_thread(fn):
